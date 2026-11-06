@@ -1,0 +1,48 @@
+# Local Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Local Isaac Lab or Isaac Sim checkout accidentally placed in this repository
+/IsaacLab/
+/_isaac_sim/
+
+# Training output and downloaded datasets
+logs/
+runs/
+outputs/
+checkpoints/
+videos/
+recordings/
+wandb/
+datasets/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Local configuration and editor state
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+*.tmp
+*.log
+*.dmp
+imgui.ini
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
