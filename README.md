@@ -19,15 +19,14 @@ versions. Keep the commit and patch together when updating the simulator.
 ## Windows setup for teammates
 
 Install a current NVIDIA driver, Git, and `uv`. Clone this repository and Isaac
-Lab as sibling folders, then run the following in PowerShell (replace the team
-repository URL):
+Lab as sibling folders, then run the following in PowerShell:
 
 ```powershell
-git clone <team-repository-url> franka-grasp-project
+git clone https://github.com/vincent8264/franka_impedance.git franka_impedance
 git clone https://github.com/isaac-sim/IsaacLab.git IsaacLab
 cd IsaacLab
 git checkout e78aa3e21c2d10c0e74b4b28ff537d84f6544fbb
-git apply ..\franka-grasp-project\setup\isaaclab-uv-lock.patch
+git apply ..\franka_impedance\setup\isaaclab-uv-lock.patch
 uv sync --locked
 uv run --locked isaaclab zero_agent --task Isaac-Lift-Franka --num_envs 1 --max_steps 1 --viz none
 ```
