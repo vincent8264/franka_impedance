@@ -4,22 +4,11 @@ The [project proposal](docs/proposal.md) describes the goal and the three
 controller variants: Cartesian impedance, direct RL, and impedance with an RL
 residual.
 
-## Simulator version
+## Setup (Windows)
 
-Use the Isaac Lab 3.0 development checkout at commit
-`e78aa3e21c2d10c0e74b4b28ff537d84f6544fbb`. This exact checkout has been
-tested on Windows with the Newton backend and the `Isaac-Lift-Franka` task. The
-project code belongs in this repository; do not copy the Isaac Lab source into it.
-
-The commit identifies the Isaac Lab source. The accompanying
-[`setup/isaaclab-uv-lock.patch`](setup/isaaclab-uv-lock.patch) records package
-version updates needed to make that commit's `uv.lock` match its source package
-versions. Keep the commit and patch together when updating the simulator.
-
-## Windows setup for teammates
-
-Install a current NVIDIA driver, Git, and `uv`. Clone this repository and Isaac
-Lab as sibling folders, then run the following in PowerShell:
+Use Isaac Lab commit `e78aa3e21c2d10c0e74b4b28ff537d84f6544fbb` with the
+[lockfile patch](setup/isaaclab-uv-lock.patch). Install an NVIDIA driver, Git,
+and `uv`. For sibling checkouts:
 
 ```powershell
 git clone https://github.com/vincent8264/franka_impedance.git franka_impedance
@@ -31,14 +20,26 @@ uv sync --locked
 uv run --locked isaaclab zero_agent --task Isaac-Lift-Franka --num_envs 1 --max_steps 1 --viz none
 ```
 
-The final command is a simulator smoke test, not a grasp-success test. Its first
-run may spend a few minutes building caches and filling the task's reset bank.
-For RSL-RL training, install the optional dependency with
-`uv sync --locked --extra rsl-rl`.
+For RL training dependencies: `uv sync --locked --extra rsl-rl`.
 
-Keep task configuration, controllers, training scripts, evaluation scripts, and
-results in this repository. Evaluate all three controllers with the same task,
-physics backend, object-property distributions, observations, and random seeds.
-Generated logs, videos, downloaded datasets, and model checkpoints are ignored
-by Git. Small, reviewed result summaries and figures can be committed when
-they are ready to share.
+## Run the project scene
+
+Run from the Isaac Lab checkout so `uv` uses its environment. If the checkouts
+are not siblings, replace the script path with its absolute path.
+
+```powershell
+uv run --locked python ..\franka_impedance\scripts\run_grasp_scene.py --viz newton_gl
+uv run --locked python ..\franka_impedance\scripts\run_grasp_scene.py --viz none --max_steps 240
+```
+
+The runner supports `--gripper-effort`, `--episode-seconds`, and
+`--max-episodes`. Episodes default to 12 seconds; success means the cuboid
+stays 10 cm above the table for 0.5 seconds. Grasp control is not implemented
+yet.
+
+## Entry points
+
+- [run_grasp_scene.py](scripts/run_grasp_scene.py): launch and step the scene.
+- [grasp_scene_cfg.py](scripts/grasp_scene_cfg.py): Franka, table, and cuboid.
+- [effort_control.py](scripts/effort_control.py): shared arm torque and gripper effort interface.
+- [grasp_task.py](scripts/grasp_task.py): episode resets, success check, and observations.
