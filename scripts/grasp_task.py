@@ -93,11 +93,11 @@ class GraspEpisodes:
         self.above_steps = torch.zeros_like(self.elapsed_steps)
         self.episode_number = torch.zeros_like(self.elapsed_steps)
 
-    def reset(self, env_ids: list[int] | None = None) -> None:
+    def reset(self, env_ids: list[int] | torch.Tensor | None = None, *, reset_scene: bool = True) -> None:
         """Restore the default robot and cuboid state for selected environments."""
         if env_ids is None:
             env_ids = list(range(self.scene.num_envs))
-        if not env_ids:
+        if len(env_ids) == 0:
             return
 
         robot_pose = self.robot.data.default_root_pose.torch[env_ids].clone()
@@ -119,20 +119,27 @@ class GraspEpisodes:
         self.object.write_root_velocity_to_sim_index(
             root_velocity=self.object.data.default_root_vel.torch[env_ids].clone(), env_ids=env_ids
         )
-        self.scene.reset(env_ids)
+        if reset_scene:
+            self.scene.reset(env_ids)
         self.elapsed_steps[env_ids] = 0
         self.above_steps[env_ids] = 0
         self.episode_number[env_ids] += 1
 
-    def update(self) -> tuple[torch.Tensor, torch.Tensor]:
-        """Advance one physics step; return success and timeout masks."""
-        self.elapsed_steps += 1
+    def clearance(self) -> torch.Tensor:
+        """Return the height of the lowest cube corner above the tabletop."""
         pose_w = self.object.data.root_link_pose_w.torch
         rotation_w = matrix_from_quat(pose_w[:, 3:7])
         half_size = pose_w.new_tensor(OBJECT_SIZE_M) * 0.5
         bottom_z = pose_w[:, 2] - (rotation_w[:, 2, :].abs() * half_size).sum(dim=-1)
         table_top_z = self.table.data.root_link_pose_w.torch[:, 2] + TABLE_SIZE_M[2] * 0.5
-        above = bottom_z >= table_top_z + 0.10
+        return bottom_z - table_top_z
+
+    def update(self, clearance: torch.Tensor | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+        """Advance one physics step; return success and timeout masks."""
+        self.elapsed_steps += 1
+        if clearance is None:
+            clearance = self.clearance()
+        above = clearance >= 0.10
         self.above_steps = torch.where(above, self.above_steps + 1, torch.zeros_like(self.above_steps))
         success = self.above_steps >= self.hold_steps
         timed_out = (self.elapsed_steps >= self.max_steps) & ~success
