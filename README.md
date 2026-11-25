@@ -24,12 +24,13 @@ For RL training dependencies: `uv sync --locked --extra rsl-rl`.
 
 ## Run the project scene
 
-Run from the Isaac Lab checkout so `uv` uses its environment. If the checkouts
-are not siblings, replace the script path with its absolute path.
+Run the project scripts from the Isaac Lab checkout so `uv` uses its environment.
+In the commands below, replace `{project root}` with the absolute path to this
+repository (for example, `C:\Users\user\Documents\ECE 276C\franka_impedance`).
 
 ```powershell
-uv run --locked python ..\franka_impedance\scripts\run_grasp_scene.py --viz newton_gl
-uv run --locked python ..\franka_impedance\scripts\run_grasp_scene.py --viz none --max_steps 240
+uv run --locked python "{project root}\scripts\run_grasp_scene.py" --viz newton_gl
+uv run --locked python "{project root}\scripts\run_grasp_scene.py" --viz none --max_steps 240
 ```
 
 The runner supports `--gripper-effort`, `--episode-seconds`, and
@@ -39,12 +40,12 @@ hold for inspection.
 
 ## Direct RL smoke tests
 
-From the pinned Isaac Lab checkout, use the existing virtual environment:
+From the pinned Isaac Lab checkout:
 
 ```powershell
-& ./.venv/Scripts/python.exe -B -u ../franka_impedance/scripts/train_direct_rl.py --mode rollout --num-envs 2 --viz none
-& ./.venv/Scripts/python.exe -B -u ../franka_impedance/scripts/train_direct_rl.py --mode contact --num-envs 1 --viz none
-& ./.venv/Scripts/python.exe -B -u ../franka_impedance/scripts/train_direct_rl.py --mode ppo --num-envs 4 --iterations 1 --contact-reward --viz none
+uv run --locked python "{project root}\scripts\train_direct_rl.py" --mode rollout --num-envs 2 --viz none
+uv run --locked python "{project root}\scripts\train_direct_rl.py" --mode contact --num-envs 1 --viz none
+uv run --locked python "{project root}\scripts\train_direct_rl.py" --mode ppo --num-envs 4 --iterations 1 --contact-reward --viz none
 ```
 
 The policy reads the shared 46-element observation and supplies eight actions
@@ -68,10 +69,47 @@ success flag is still used for termination. Without the flag, the reward uses
 temporary height-only lift and completion terms for smoke testing. PPO logs
 and checkpoints go under `logs/direct_grasp/`.
 
+## Cartesian impedance baseline
+
+The fixed baseline uses the same Newton scene, task state, contact reward,
+effort limits, 120 Hz control rate, and success checks as Direct RL. The scene
+still produces the 46-element policy observation; the classical controller
+also uses the robot's model Jacobian to turn a Cartesian wrench into torques.
+It settles the cube for 36 steps, then approaches, descends, closes, lifts, and
+holds on a timed trajectory planned once from the settled cube position. A
+Cartesian spring and damper produces arm torques through the hand Jacobian;
+model gravity compensation is added by the shared environment. The gripper
+requests a fixed +1.05 N opening effort before closure and -17.5 N closing
+effort thereafter. The shared finger-limit guard may reduce those efforts near
+the joint limits. The gains and timing come from the nominal scripted physics
+validation and are not adjusted in response to object mass or friction.
+
+From the pinned Isaac Lab checkout:
+
+```powershell
+uv run --locked python "{project root}\scripts\eval_cartesian_impedance.py" --episodes 16 --num-envs 4 --seed 42 --metrics "{project root}\logs\impedance\nominal.json" --viz none
+```
+
+For one episode of step-level diagnostics, use `--episodes 1 --num-envs 1
+--diagnostics "{project root}\logs\impedance\nominal.csv"`. The evaluation
+prints the same success, return, and action-saturation metrics as the Direct RL
+evaluator. One nominal seed-42 simulator episode passed both geometric and
+contact-verified success checks; see the [development record](docs/direct_rl_development.md).
+That single result does not establish robustness across object properties, and
+the gripper joint-limit tolerance remains under investigation.
+
 ## Entry points
 
 - [run_grasp_scene.py](scripts/run_grasp_scene.py): launch and step the scene.
-- [grasp_scene_cfg.py](scripts/grasp_scene_cfg.py): Franka, table, and cuboid.
-- [effort_control.py](scripts/effort_control.py): shared arm torque and gripper effort interface.
-- [grasp_task.py](scripts/grasp_task.py): episode resets, success check, and observations.
 - [train_direct_rl.py](scripts/train_direct_rl.py): Direct RL rollout, contact probes, and PPO smoke test.
+- [eval_direct_rl.py](scripts/eval_direct_rl.py): evaluate a saved Direct RL policy.
+- [eval_cartesian_impedance.py](scripts/eval_cartesian_impedance.py): Baseline evaluation and diagnostics.
+- [validate_grasp_physics.py](scripts/validate_grasp_physics.py): scripted nominal grasp validation with measured applied effort.
+- [diagnose_grasp_handoff.py](scripts/diagnose_grasp_handoff.py) and [diagnose_gripper_limits.py](scripts/diagnose_gripper_limits.py): specialized diagnostics.
+
+Reusable code lives in [scripts/franka_impedance](scripts/franka_impedance):
+`cfg` holds the scene, `controllers` the effort and grasp controllers,
+`envs` the shared task and Direct RL environment, `rl` the PPO runner,
+`diagnostics` the recorders, and `testing` the smoke fixtures. This follows
+Isaac Lab's separation of runnable scripts and task modules while keeping the
+package importable when scripts are run by path, without an installation step.

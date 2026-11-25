@@ -1,6 +1,14 @@
 # Franka Panda Direct RL 開發紀錄
 
-**最後更新：2026-11-24｜ECE 276C**
+**最後更新：2026-11-25｜ECE 276C**
+
+> **2026-11-25 程式修正與重跑：** `scripted_actions` 已改用目前夾爪映射的 +1／−1 動作，`validate_grasp_physics.py` 的 `applied_effort` 改為記錄環境實際送出的力。已用下方「2026-11-25 名目驗證」設定重跑；其餘 CSV、GIF 和策略成功率保留原執行結果。
+
+## 2026-11-25 名目驗證
+
+從 `C:\Users\user\IsaacLab` 的固定 commit `e78aa3e` 執行，Newton／CUDA、120 Hz、種子 42、單環境。`uv run --locked --no-sync --offline` 使用現有虛擬環境與已下載資產。更新後的腳本在 `lift` 第 172 個索引步通過幾何及雙指接觸成功條件；含 36 步靜置共 659 步。CSV 的夾爪 `applied_effort_7` 由環境實際命令擷取：閉合首步及抬升為 −17.5 N；張開階段受到行程保護，實際為 0–0.783 N。[腳本 CSV](../logs/direct_grasp/validation-20261125/scripted.csv) 為本機忽略的輸出。
+
+同設定下，新的 Cartesian impedance baseline 完成 1/1 回合，幾何及接觸驗證成功率皆為 100%，於第 659 步終止；方塊底部最大離桌 15.75 cm，高於 10 cm 且雙指接觸各超過 0.5 N 共 60 步。[評估 JSON](../logs/impedance/validation-20261125.json)及[逐步 CSV](../logs/impedance/validation-20261125.csv)為本機忽略的輸出。這只驗證單一名目回合；夾爪左右指最大位置約 40.028／40.034 mm，較 40 mm 上限各超出 0.028／0.034 mm，仍高於下文的每指 0.02 mm 驗收門檻。
 
 ## 目前進度
 

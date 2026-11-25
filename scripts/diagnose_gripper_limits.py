@@ -14,20 +14,20 @@ from isaaclab_newton.physics import NewtonCfg
 def run(env, output):
     import torch
 
-    from grasp_diagnostics import GraspDiagnostics
-    from smoke_direct_rl import move_asset
-    from validate_grasp_physics import scripted_actions
+    from franka_impedance.diagnostics.grasp_diagnostics import GraspDiagnostics
+    from franka_impedance.testing.smoke_direct_rl import move_asset
+    from franka_impedance.controllers.scripted_grasp import scripted_actions
 
     finger_joints = env.observations.joint_ids[7:9]
     limits = env.robot.data.joint_pos_limits.torch[0, finger_joints].tolist()
     effort_limit = env.control.limits[0, 7].item()
     cases = (
-        ("script_open", 0.015, True),
-        ("full_open", 1.0, True),
-        ("script_close", -0.25, True),
-        ("full_close", -1.0, True),
-        ("full_open_cube_away", 1.0, False),
-        ("full_close_cube_away", -1.0, False),
+        ("quarter_open", 0.25, True),
+        ("nominal_open", 1.0, True),
+        ("quarter_close", -0.25, True),
+        ("nominal_close", -1.0, True),
+        ("nominal_open_cube_away", 1.0, False),
+        ("nominal_close_cube_away", -1.0, False),
     )
     rows = []
     with torch.no_grad():
@@ -107,8 +107,8 @@ def main():
         if not isinstance(physics, NewtonCfg):
             raise RuntimeError("The gripper diagnostic requires Newton.")
         sim.physics = physics
-        from direct_rl_env import DirectGraspCfg, DirectGraspEnv
-        from smoke_direct_rl import ContactProbeSceneCfg
+        from franka_impedance.envs.direct_rl_env import DirectGraspCfg, DirectGraspEnv
+        from franka_impedance.testing.smoke_direct_rl import ContactProbeSceneCfg
 
         env = DirectGraspEnv(DirectGraspCfg(
             sim=sim, scene=ContactProbeSceneCfg(num_envs=1, env_spacing=2.0), seed=42,

@@ -5,8 +5,8 @@ import csv
 import torch
 from isaaclab.utils.math import quat_apply
 
-from effort_control import EFFORT_JOINT_NAMES
-from grasp_rewards import grasp_reward_terms
+from franka_impedance.controllers.effort_control import EFFORT_JOINT_NAMES
+from franka_impedance.envs.grasp_rewards import grasp_reward_terms
 
 
 class GraspDiagnostics:

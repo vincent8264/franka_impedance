@@ -1,8 +1,8 @@
-"""Launch the Franka tabletop scene.
+r"""Launch the Franka tabletop scene.
 
 From the pinned Isaac Lab checkout:
-    uv run --locked python ../franka_impedance/scripts/run_grasp_scene.py --viz newton_gl
-    uv run --locked python ../franka_impedance/scripts/run_grasp_scene.py --viz none --max_steps 240
+    uv run --locked python "{project root}\scripts\run_grasp_scene.py" --viz newton_gl
+    uv run --locked python "{project root}\scripts\run_grasp_scene.py" --viz none --max_steps 240
 """
 
 import argparse
@@ -34,9 +34,9 @@ def run(sim_cfg: sim_utils.SimulationCfg, args: argparse.Namespace) -> None:
     from isaaclab.scene import InteractiveScene
     from isaaclab.sim import SimulationContext
 
-    from effort_control import FrankaEffortControl
-    from grasp_scene_cfg import GraspSceneCfg
-    from grasp_task import GraspEpisodes, GraspObservations, OBSERVATION_DIM
+    from franka_impedance.controllers.effort_control import FrankaEffortControl
+    from franka_impedance.cfg.grasp_scene_cfg import GraspSceneCfg
+    from franka_impedance.envs.grasp_task import GraspEpisodes, GraspObservations, OBSERVATION_DIM
 
     sim = SimulationContext(sim_cfg)
     sim.set_camera_view(eye=(-1.5, 1.4, 1.2), target=(-0.45, 0.0, 0.25))

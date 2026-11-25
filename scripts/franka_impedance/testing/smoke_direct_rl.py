@@ -6,8 +6,8 @@ from isaaclab.utils import configclass
 from isaaclab.utils.math import quat_apply
 from isaaclab_newton.sensors.contact_sensor import ContactSensorCfg
 
-from direct_rl_env import FINGER_PARENT, ContactGraspSceneCfg
-from grasp_scene_cfg import TABLE_SIZE_M
+from franka_impedance.envs.direct_rl_env import FINGER_PARENT, ContactGraspSceneCfg
+from franka_impedance.cfg.grasp_scene_cfg import TABLE_SIZE_M
 
 
 @configclass

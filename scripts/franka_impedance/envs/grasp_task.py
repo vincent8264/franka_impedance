@@ -6,7 +6,7 @@ import torch
 
 from isaaclab.utils.math import matrix_from_quat, quat_apply_inverse, subtract_frame_transforms
 
-from grasp_scene_cfg import OBJECT_SIZE_M, TABLE_SIZE_M
+from franka_impedance.cfg.grasp_scene_cfg import OBJECT_SIZE_M, TABLE_SIZE_M
 
 
 OBSERVATION_FIELDS = (

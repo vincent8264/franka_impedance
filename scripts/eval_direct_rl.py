@@ -10,32 +10,20 @@ from isaaclab.sim import SimulationCfg
 from isaaclab_newton.physics import NewtonCfg
 
 
-def load_actor(env, checkpoint, seed):
-    import torch
-
-    from train_direct_rl import make_runner
-
-    runner = make_runner(env, seed)
-    saved = torch.load(checkpoint, weights_only=True, map_location=env.device)
-    actor = runner.get_inference_policy(env.device)
-    actor.load_state_dict(saved["actor_state_dict"])
-    actor.eval()
-    print(f"Loaded deterministic actor from {checkpoint}", flush=True)
-    return actor
-
-
 def evaluate(env, args):
     import torch
     from tensordict import TensorDict
 
+    from franka_impedance.rl.ppo import load_actor
+
     actor = load_actor(env, args.checkpoint, args.seed) if args.checkpoint else None
     obs, _ = env.reset()
     if args.gif:
-        from grasp_gif import GraspGif
+        from franka_impedance.diagnostics.grasp_gif import GraspGif
 
         recorder = GraspGif(env)
     if args.diagnostics:
-        from grasp_diagnostics import GraspDiagnostics
+        from franka_impedance.diagnostics.grasp_diagnostics import GraspDiagnostics
 
         env.step_recorder = GraspDiagnostics(env, recorder if args.gif else None, args.record_steps)
     completed = torch.zeros(env.num_envs, dtype=torch.long, device=env.device)
@@ -132,7 +120,7 @@ def main():
         if not isinstance(physics, NewtonCfg):
             raise RuntimeError("Direct grasp requires Newton.")
         sim.physics = physics
-        from direct_rl_env import ContactGraspSceneCfg, DirectGraspCfg, DirectGraspEnv
+        from franka_impedance.envs.direct_rl_env import ContactGraspSceneCfg, DirectGraspCfg, DirectGraspEnv
 
         cfg = DirectGraspCfg(
             sim=sim,

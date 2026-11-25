@@ -4,56 +4,8 @@ import csv
 from pathlib import Path
 
 import torch
-from isaaclab.utils.math import compute_pose_error, quat_apply, quat_apply_inverse
-
-
-def scripted_actions(env, *, pregrasp_only=False):
-    """Yield the existing scripted commands from a settled nominal scene."""
-    robot = env.robot.data
-    hand = env.observations.ee_body_id
-    arm = env.control.arm_joint_ids
-    fingers = env.robot.find_bodies(["panda_leftfinger", "panda_rightfinger"])[0]
-    limits = env.control.limits
-    residual_limits = limits[:, :7] * env.cfg.arm_effort_scale
-    action = torch.zeros_like(limits)
-    pose = robot.body_link_pose_w.torch[:, hand].clone()
-    cube = env.scene["object"].data
-    center = cube.root_link_pose_w.torch[:, :3].clone()
-    finger_midpoint = robot.body_link_pose_w.torch[:, fingers, :3].mean(dim=1)
-    tip_offset = quat_apply_inverse(pose[:, 3:7], finger_midpoint - pose[:, :3])
-    # The authored finger pads are centered 45.25 mm beyond the finger origins.
-    tip_offset[:, 2] += 0.04525
-    # Downward hand with closing axis aligned to a face of the reset cube.
-    down = pose.new_tensor([[0., 1., 0., 0.]])
-    if abs(env.episodes.clearance().item()) > 0.005:
-        raise RuntimeError(f"Cube did not settle on the tabletop: clearance={env.episodes.clearance().item():.4f} m")
-    pinch = center - quat_apply(down, tip_offset)
-    above = pinch + pose.new_tensor([[0., 0., 0.12]])
-    lifted = pinch + pose.new_tensor([[0., 0., 0.155]])
-    phases = (
-        ("approach", 200, pose[:, :3], above, 0.015),
-        ("descend", 150, above, pinch, 0.015),
-        ("close", 100, pinch, pinch, -0.25),
-        ("lift", 200, pinch, lifted, -0.25),
-        ("hold", 120, lifted, lifted, -0.25),
-    )
-    for phase, steps, start, end, grip in phases[:2] if pregrasp_only else phases:
-        for tick in range(steps):
-            ratio = min(1., (tick + 1) / (0.8 * steps))
-            target = torch.lerp(start, end, ratio * ratio * (3. - 2. * ratio))
-            hand_pose = robot.body_link_pose_w.torch[:, hand]
-            pos_err, rot_err = compute_pose_error(
-                hand_pose[:, :3], hand_pose[:, 3:7], target, down, rot_error_type="axis_angle"
-            )
-            jac = robot.body_link_jacobian_w.torch[:, hand - 1, :, :][:, :, arm]
-            velocity = robot.joint_vel.torch[:, arm]
-            twist = (jac @ velocity.unsqueeze(-1)).squeeze(-1)
-            wrench = torch.cat((300. * pos_err, 25. * rot_err), dim=-1)
-            wrench -= twist * pose.new_tensor([30., 30., 30., 5., 5., 5.])
-            torque = (jac.transpose(-1, -2) @ wrench.unsqueeze(-1)).squeeze(-1) - 0.8 * velocity
-            action[:, :7] = torque / residual_limits
-            action[:, 7] = grip
-            yield phase, tick, action, target
+from franka_impedance.controllers.scripted_grasp import scripted_actions
+from franka_impedance.diagnostics.effort_capture import AppliedEffortCapture
 
 
 def validate(env, output: Path):
@@ -63,8 +15,6 @@ def validate(env, output: Path):
         env.step(torch.zeros_like(env.actions))
     robot = env.robot.data
     hand = env.observations.ee_body_id
-    arm = env.control.arm_joint_ids
-    limits = env.control.limits
     columns = [
         "phase", "tick", "left_n", "right_n", "left_table_n", "right_table_n",
         "clearance_m", "distance_m", "hand_error_m", "width_m", "reward",
@@ -75,15 +25,14 @@ def validate(env, output: Path):
         columns.extend(f"{label}_{joint}" for joint in env.control.joint_ids)
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    with output.open("w", newline="") as stream:
+    with output.open("w", newline="", encoding="utf-8") as stream, AppliedEffortCapture(env) as effort_capture:
         writer = csv.writer(stream)
         writer.writerow(columns)
         for phase, tick, action, target in scripted_actions(env):
-            command = action.clamp(-1., 1.) * limits
-            command[:, :7] *= env.cfg.arm_effort_scale
-            command[:, :7] += robot.gravity_compensation_forces.torch[:, arm]
-            applied = command.clamp(-limits, limits)
             _, reward, done, timeout, extras = env.step(action)
+            applied = effort_capture.applied
+            if applied is None:
+                raise RuntimeError("The environment did not report applied effort.")
             verified = extras["grasp_success"][0].item()
             # The environment resets on success, so its post-step poses and sensors
             # cannot be used for terminal measurements. The reward is pre-reset.
@@ -128,8 +77,8 @@ def main():
         if not isinstance(physics, NewtonCfg):
             raise RuntimeError("This validation requires Newton.")
         sim.physics = physics
-        from direct_rl_env import DirectGraspCfg, DirectGraspEnv
-        from smoke_direct_rl import ContactProbeSceneCfg
+        from franka_impedance.envs.direct_rl_env import DirectGraspCfg, DirectGraspEnv
+        from franka_impedance.testing.smoke_direct_rl import ContactProbeSceneCfg
 
         cfg = DirectGraspCfg(sim=sim, scene=ContactProbeSceneCfg(num_envs=1, env_spacing=2.), seed=42)
         env = DirectGraspEnv(cfg)

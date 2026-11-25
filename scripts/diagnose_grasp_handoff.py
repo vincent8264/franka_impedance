@@ -12,10 +12,10 @@ def run(env, args):
     import torch
     from tensordict import TensorDict
 
-    from eval_direct_rl import load_actor
-    from grasp_diagnostics import GraspDiagnostics
-    from grasp_gif import GraspGif
-    from validate_grasp_physics import scripted_actions
+    from franka_impedance.rl.ppo import load_actor
+    from franka_impedance.diagnostics.grasp_diagnostics import GraspDiagnostics
+    from franka_impedance.diagnostics.grasp_gif import GraspGif
+    from franka_impedance.controllers.scripted_grasp import scripted_actions
 
     actor = load_actor(env, args.checkpoint, 42)
     env.reset()
@@ -88,8 +88,8 @@ def main():
         if not isinstance(physics, NewtonCfg):
             raise RuntimeError("The handoff diagnostic requires Newton.")
         sim.physics = physics
-        from direct_rl_env import DirectGraspCfg, DirectGraspEnv
-        from smoke_direct_rl import ContactProbeSceneCfg
+        from franka_impedance.envs.direct_rl_env import DirectGraspCfg, DirectGraspEnv
+        from franka_impedance.testing.smoke_direct_rl import ContactProbeSceneCfg
 
         cfg = DirectGraspCfg(
             sim=sim, scene=ContactProbeSceneCfg(num_envs=1, env_spacing=2.0), seed=42, episode_length_s=12.0

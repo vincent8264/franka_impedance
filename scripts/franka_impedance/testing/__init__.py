@@ -1,0 +1,1 @@
+"""Simulation smoke-test fixtures."""

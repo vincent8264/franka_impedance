@@ -8,10 +8,10 @@ from isaaclab.utils import configclass
 from isaaclab_newton.physics import NewtonCfg
 from isaaclab_newton.sensors.contact_sensor import ContactSensorCfg
 
-from effort_control import EFFORT_JOINT_NAMES, FrankaEffortControl
-from grasp_rewards import grasp_reward
-from grasp_scene_cfg import GraspSceneCfg
-from grasp_task import GraspEpisodes, GraspObservations, OBSERVATION_DIM
+from franka_impedance.controllers.effort_control import EFFORT_JOINT_NAMES, FrankaEffortControl
+from franka_impedance.envs.grasp_rewards import grasp_reward
+from franka_impedance.cfg.grasp_scene_cfg import GraspSceneCfg
+from franka_impedance.envs.grasp_task import GraspEpisodes, GraspObservations, OBSERVATION_DIM
 
 
 FINGER_PARENT = (
