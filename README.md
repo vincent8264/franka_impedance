@@ -56,8 +56,9 @@ weight without a position or velocity target. The gripper uses the driven
 finger's full effort range with positive effort opening and negative effort
 closing the fingers. These scales are initial settings for smoke testing.
 
-The nominal scene uses the shared 0.2 kg cube with static and dynamic friction
-of 0.5. The rollout test shortens the episode to one second to exercise timeout
+The authored cube is 0.2 kg with friction 0.5; episode resets randomize both
+properties by default as described below. The rollout test shortens the episode
+to one second to exercise timeout
 and automatic resets. Its success test moves the cube to a scripted height to
 exercise the shared 0.5-second clearance check.
 
@@ -68,6 +69,33 @@ that contact throughout the 0.5-second clearance window. The shared geometric
 success flag is still used for termination. Without the flag, the reward uses
 temporary height-only lift and completion terms for smoke testing. PPO logs
 and checkpoints go under `logs/direct_grasp/`.
+
+## Object-property variation
+
+The scene, Direct RL trainer, and both evaluators accept `--mass-range MIN MAX`
+(kg) and `--friction-range MIN MAX` (Newton's single friction coefficient).
+Defaults are `0.1 0.5` kg and `0.2 0.8`, so randomization is enabled. Each
+environment samples one mass and one coefficient at every episode reset. A
+given seed, environment index, and episode number always produce the same
+pair, regardless of when other environments reset. The sampled properties are
+not added to the 46-element policy observation. Both evaluators record the
+ranges, seed, and each completed episode's sampled values in their JSON metrics.
+
+Train with contact reward and evaluate both baselines over the default
+distribution and seed:
+
+```powershell
+uv run --locked python "{project root}\\scripts\\train_direct_rl.py" --mode ppo --contact-reward --viz none
+uv run --locked python "{project root}\\scripts\\eval_direct_rl.py" --checkpoint "{checkpoint}" --episodes 16 --seed 42 --viz none
+uv run --locked python "{project root}\\scripts\\eval_cartesian_impedance.py" --episodes 16 --seed 42 --viz none
+```
+
+Newton uses one friction value rather than separate static and dynamic values.
+The default ranges are initial robustness settings, not tuned training settings.
+Pass `--mass-range 0.2 0.2 --friction-range 0.5 0.5` to reproduce nominal
+conditions. The scripted physics validation and gripper diagnostics set these
+nominal values explicitly. Use `--mode properties --num-envs 2` to check the
+default mass and friction readback from Newton after a partial reset.
 
 ## Cartesian impedance baseline
 

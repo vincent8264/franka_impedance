@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -17,6 +18,11 @@ def train(env, args):
 
     log_dir = Path(__file__).resolve().parents[1] / "logs" / "direct_grasp" / datetime.now().strftime("%Y%m%d-%H%M%S-%f")
     log_dir.mkdir(parents=True)
+    (log_dir / "run_config.json").write_text(json.dumps({
+        "seed": args.seed, "num_envs": args.num_envs, "iterations": args.iterations,
+        "mass_range_kg": args.mass_range, "friction_range": args.friction_range,
+        "contact_reward": args.contact_reward,
+    }, indent=2) + "\n", encoding="utf-8")
     print(f"PPO output: {log_dir}")
     trace = []
     runner = make_runner(env, args.seed, args.iterations, args.save_interval, str(log_dir), trace)
@@ -51,16 +57,22 @@ def train(env, args):
 
 
 def main():
+    from franka_impedance.envs.object_properties import (
+        NOMINAL_FRICTION, NOMINAL_MASS_KG, add_property_args, parse_property_ranges,
+    )
+
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("rollout", "contact", "ppo"), default="rollout")
+    parser.add_argument("--mode", choices=("rollout", "contact", "properties", "ppo"), default="rollout")
     parser.add_argument("--num-envs", type=int, default=4)
     parser.add_argument("--iterations", type=int, default=1)
     parser.add_argument("--save-interval", type=int, default=1)
     parser.add_argument("--resume", type=Path, help="Resume PPO from a completed update checkpoint.")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--contact-reward", action="store_true")
+    add_property_args(parser)
     add_launcher_args(parser)
     args = parser.parse_args()
+    mass_range, friction_range = parse_property_ranges(parser, args)
     max_iterations = 96 if args.resume else 24
     if not 1 <= args.iterations <= max_iterations or args.save_interval < 1:
         parser.error(f"Use 1 to {max_iterations} iterations and a positive checkpoint interval.")
@@ -68,6 +80,8 @@ def main():
         parser.error("--resume requires PPO mode and an existing checkpoint.")
     if args.num_envs < (2 if args.mode == "rollout" else 1):
         parser.error("Use at least two environments for rollout or one for other modes.")
+    if args.mode == "properties" and mass_range == (NOMINAL_MASS_KG,) * 2 and friction_range == (NOMINAL_FRICTION,) * 2:
+        parser.error("Properties mode requires a nonnominal mass or friction range.")
 
     sim = SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg())
     with launch_simulation(sim, args) as physics:
@@ -90,15 +104,17 @@ def main():
             scene=scene_type(num_envs=args.num_envs, env_spacing=2.0),
             seed=args.seed,
             episode_length_s=1.0 if args.mode == "rollout" else 12.0,
+            object_mass_range=mass_range,
+            object_friction_range=friction_range,
         )
         env = DirectGraspEnv(cfg)
         try:
             if args.mode == "ppo":
                 train(env, args)
             else:
-                from franka_impedance.testing.smoke_direct_rl import check_contacts, check_rollout
+                from franka_impedance.testing.smoke_direct_rl import check_contacts, check_properties, check_rollout
 
-                check = check_contacts if args.mode == "contact" else check_rollout
+                check = {"contact": check_contacts, "properties": check_properties, "rollout": check_rollout}[args.mode]
                 check(env)
         finally:
             env.close()

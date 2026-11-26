@@ -7,6 +7,10 @@ import torch
 from isaaclab.utils.math import matrix_from_quat, quat_apply_inverse, subtract_frame_transforms
 
 from franka_impedance.cfg.grasp_scene_cfg import OBJECT_SIZE_M, TABLE_SIZE_M
+from franka_impedance.envs.object_properties import (
+    DEFAULT_FRICTION_RANGE, DEFAULT_MASS_RANGE_KG, NOMINAL_FRICTION, NOMINAL_MASS_KG,
+    NewtonObjectProperties, validate_range,
+)
 
 
 OBSERVATION_FIELDS = (
@@ -79,7 +83,9 @@ class GraspObservations:
 class GraspEpisodes:
     """Fixed-length episodes with a continuous table-clearance success window."""
 
-    def __init__(self, scene, physics_dt: float, episode_seconds: float = 12.0):
+    def __init__(self, scene, physics_dt: float, episode_seconds: float = 12.0, *, seed: int = 42,
+                 mass_range: tuple[float, float] = DEFAULT_MASS_RANGE_KG,
+                 friction_range: tuple[float, float] = DEFAULT_FRICTION_RANGE):
         if physics_dt <= 0 or episode_seconds <= 0:
             raise ValueError("Physics timestep and episode length must be positive")
         self.scene = scene
@@ -92,6 +98,12 @@ class GraspEpisodes:
         self.elapsed_steps = torch.zeros(scene.num_envs, dtype=torch.long, device=scene.device)
         self.above_steps = torch.zeros_like(self.elapsed_steps)
         self.episode_number = torch.zeros_like(self.elapsed_steps)
+        validate_range("mass", mass_range)
+        validate_range("friction", friction_range)
+        self.properties = None
+        if mass_range != (NOMINAL_MASS_KG, NOMINAL_MASS_KG) or friction_range != (NOMINAL_FRICTION, NOMINAL_FRICTION):
+            self.properties = NewtonObjectProperties(self.object, scene.num_envs, scene.device, seed,
+                                                     mass_range, friction_range)
 
     def reset(self, env_ids: list[int] | torch.Tensor | None = None, *, reset_scene: bool = True) -> None:
         """Restore the default robot and cuboid state for selected environments."""
@@ -99,6 +111,7 @@ class GraspEpisodes:
             env_ids = list(range(self.scene.num_envs))
         if len(env_ids) == 0:
             return
+        env_ids = torch.as_tensor(env_ids, device=self.scene.device, dtype=torch.long)
 
         robot_pose = self.robot.data.default_root_pose.torch[env_ids].clone()
         robot_pose[:, :3] += self.scene.env_origins[env_ids]
@@ -119,6 +132,8 @@ class GraspEpisodes:
         self.object.write_root_velocity_to_sim_index(
             root_velocity=self.object.data.default_root_vel.torch[env_ids].clone(), env_ids=env_ids
         )
+        if self.properties is not None:
+            self.properties.reset(env_ids, self.episode_number[env_ids])
         if reset_scene:
             self.scene.reset(env_ids)
         self.elapsed_steps[env_ids] = 0

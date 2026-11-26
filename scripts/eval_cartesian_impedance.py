@@ -13,9 +13,11 @@ def evaluate(env, args):
     import torch
 
     from franka_impedance.controllers.cartesian_impedance import CartesianImpedanceGrasp
+    from franka_impedance.envs.object_properties import EpisodePropertyRecord
 
     controller = CartesianImpedanceGrasp(env)
     env.reset()
+    property_record = EpisodePropertyRecord(env)
     gif = None
     if args.gif:
         from franka_impedance.diagnostics.grasp_gif import GraspGif
@@ -51,6 +53,7 @@ def evaluate(env, args):
             if not torch.isfinite(obs["policy"]).all() or not torch.isfinite(reward).all():
                 raise RuntimeError("Nonfinite observation or reward during impedance evaluation.")
             done = (success | timeout) & active
+            property_record.record(done, completed)
             returns += torch.where(active, reward, 0.0)
             episode_steps += active
             return_sum += torch.where(done, returns, 0.0)
@@ -72,6 +75,9 @@ def evaluate(env, args):
     metrics = {
         "controller": "cartesian_impedance",
         "seed": args.seed,
+        "mass_range_kg": args.mass_range,
+        "friction_range": args.friction_range,
+        "episode_properties": sorted(property_record.samples, key=lambda sample: (sample["environment"], sample["episode"])),
         "environments": env.num_envs,
         "episodes": total,
         "geometric_success_rate": int(geometric_successes.sum().item()) / total,
@@ -94,17 +100,21 @@ def evaluate(env, args):
 
 
 def main():
+    from franka_impedance.envs.object_properties import add_property_args, parse_property_ranges
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--episodes", type=int, default=16)
     parser.add_argument("--num-envs", type=int, default=4)
     parser.add_argument("--episode-seconds", type=float, default=12.0)
     parser.add_argument("--seed", type=int, default=42)
+    add_property_args(parser)
     parser.add_argument("--metrics", type=Path)
     parser.add_argument("--diagnostics", type=Path, help="Write one episode of pre-reset per-step data to CSV.")
     parser.add_argument("--gif", type=Path)
     parser.add_argument("--record-steps", type=int, default=240)
     add_launcher_args(parser)
     args = parser.parse_args()
+    mass_range, friction_range = parse_property_ranges(parser, args)
     if min(args.episodes, args.num_envs, args.episode_seconds, args.record_steps) <= 0:
         parser.error("Episode count, environment count, duration, and record steps must be positive.")
     if args.diagnostics and (args.num_envs != 1 or args.episodes != 1):
@@ -124,6 +134,8 @@ def main():
             scene=ContactGraspSceneCfg(num_envs=args.num_envs, env_spacing=2.0),
             seed=args.seed,
             episode_length_s=args.episode_seconds,
+            object_mass_range=mass_range,
+            object_friction_range=friction_range,
         )
         env = DirectGraspEnv(cfg)
         try:

@@ -80,7 +80,10 @@ def main():
         from franka_impedance.envs.direct_rl_env import DirectGraspCfg, DirectGraspEnv
         from franka_impedance.testing.smoke_direct_rl import ContactProbeSceneCfg
 
-        cfg = DirectGraspCfg(sim=sim, scene=ContactProbeSceneCfg(num_envs=1, env_spacing=2.), seed=42)
+        cfg = DirectGraspCfg(
+            sim=sim, scene=ContactProbeSceneCfg(num_envs=1, env_spacing=2.), seed=42,
+            object_mass_range=(0.2, 0.2), object_friction_range=(0.5, 0.5),
+        )
         env = DirectGraspEnv(cfg)
         try:
             passed = validate(env, args.output)

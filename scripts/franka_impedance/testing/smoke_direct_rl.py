@@ -27,6 +27,30 @@ def move_asset(asset, ids, pose):
     asset.write_root_velocity_to_sim_index(root_velocity=torch.zeros_like(pose[:, :6]), env_ids=ids)
 
 
+def check_properties(env):
+    """Check Newton readback and selected-environment reset writes."""
+    properties = env.episodes.properties
+    assert properties is not None, "Supply a nonnominal mass or friction range."
+    env.reset()
+
+    def check_readback():
+        torch.testing.assert_close(env.scene["object"].data.body_mass.torch[:, 0], properties.mass_kg)
+        actual_friction = properties._wp.to_torch(properties._friction_binding)
+        torch.testing.assert_close(actual_friction, properties.friction[:, None].expand_as(actual_friction))
+
+    check_readback()
+    old_mass = properties.mass_kg.clone()
+    old_friction = properties.friction.clone()
+    env.episodes.reset([0])
+    env.step(torch.zeros_like(env.actions))
+    check_readback()
+    torch.testing.assert_close(properties.mass_kg[1:], old_mass[1:])
+    torch.testing.assert_close(properties.friction[1:], old_friction[1:])
+    if properties.mass_range[0] < properties.mass_range[1] or properties.friction_range[0] < properties.friction_range[1]:
+        assert properties.mass_kg[0] != old_mass[0] or properties.friction[0] != old_friction[0]
+    print(f"Newton properties passed: mass={properties.mass_kg.tolist()} kg, friction={properties.friction.tolist()}")
+
+
 def check_rollout(env):
     action = torch.zeros_like(env.actions)
     assert action.shape == (env.num_envs, 8)

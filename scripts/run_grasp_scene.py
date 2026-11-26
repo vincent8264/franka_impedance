@@ -15,13 +15,18 @@ import torch
 
 
 def parse_args() -> argparse.Namespace:
+    from franka_impedance.envs.object_properties import add_property_args, parse_property_ranges
+
     parser = argparse.ArgumentParser(description="Franka, table, and one graspable cuboid.")
     parser.add_argument("--max_steps", type=int, default=0, help="Stop after this many physics steps; 0 runs until interrupted.")
     parser.add_argument("--max-episodes", type=int, default=0, help="Stop after this many completed episodes; 0 runs indefinitely.")
     parser.add_argument("--episode-seconds", type=float, default=12.0, help="Time limit for each episode (default: 12 s).")
     parser.add_argument("--gripper-effort", type=float, default=0.0, help="Signed driven-finger effort in N (default: 0).")
+    parser.add_argument("--seed", type=int, default=42)
+    add_property_args(parser)
     add_launcher_args(parser)
     args = parser.parse_args()
+    args.mass_range, args.friction_range = parse_property_ranges(parser, args)
     if args.max_steps < 0:
         parser.error("--max_steps must be nonnegative")
     if args.max_episodes < 0 or args.episode_seconds <= 0:
@@ -47,7 +52,8 @@ def run(sim_cfg: sim_utils.SimulationCfg, args: argparse.Namespace) -> None:
     control = FrankaEffortControl(robot)
     observations = GraspObservations(scene)
     dt = sim.get_physics_dt()
-    episodes = GraspEpisodes(scene, physics_dt=dt, episode_seconds=args.episode_seconds)
+    episodes = GraspEpisodes(scene, physics_dt=dt, episode_seconds=args.episode_seconds,
+                             seed=args.seed, mass_range=args.mass_range, friction_range=args.friction_range)
     episodes.reset()
     # A low-gain software posture hold keeps the scene viewable without hidden
     # actuator PD. Later controllers will replace this eight-channel command.

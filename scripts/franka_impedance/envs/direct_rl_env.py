@@ -12,6 +12,7 @@ from franka_impedance.controllers.effort_control import EFFORT_JOINT_NAMES, Fran
 from franka_impedance.envs.grasp_rewards import grasp_reward
 from franka_impedance.cfg.grasp_scene_cfg import GraspSceneCfg
 from franka_impedance.envs.grasp_task import GraspEpisodes, GraspObservations, OBSERVATION_DIM
+from franka_impedance.envs.object_properties import DEFAULT_FRICTION_RANGE, DEFAULT_MASS_RANGE_KG
 
 
 FINGER_PARENT = (
@@ -44,6 +45,8 @@ class DirectGraspCfg(DirectRLEnvCfg):
     arm_effort_scale: float = 0.1
     gravity_compensation: bool = True
     gripper_active_braking: bool = False
+    object_mass_range: tuple[float, float] = DEFAULT_MASS_RANGE_KG
+    object_friction_range: tuple[float, float] = DEFAULT_FRICTION_RANGE
 
 
 class DirectGraspEnv(DirectRLEnv):
@@ -59,7 +62,10 @@ class DirectGraspEnv(DirectRLEnv):
         self.control = FrankaEffortControl(self.robot)
         self.observations = GraspObservations(self.scene)
         self.finger_joint_ids = self.observations.joint_ids[7:9]
-        self.episodes = GraspEpisodes(self.scene, self.physics_dt, cfg.episode_length_s)
+        self.episodes = GraspEpisodes(
+            self.scene, self.physics_dt, cfg.episode_length_s, seed=cfg.seed,
+            mass_range=cfg.object_mass_range, friction_range=cfg.object_friction_range,
+        )
         self.actions = torch.zeros_like(self.control.limits)
         self.grasp_hold_steps = torch.zeros_like(self.episodes.above_steps)
         self.step_recorder = None
