@@ -35,14 +35,17 @@ class CartesianImpedanceGrasp:
         self.pinch = torch.zeros_like(self.start)
         self.above = torch.zeros_like(self.start)
         self.lifted = torch.zeros_like(self.start)
+        self.target = torch.zeros_like(self.start)
         self.down = env.actions.new_tensor([0.0, 1.0, 0.0, 0.0]).expand(env.num_envs, -1)
 
     def reset(self, env_ids=None):
         """Forget a completed episode before its next settle-and-plan phase."""
         if env_ids is None:
             self.ready[:] = False
+            self.target[:] = 0.0
         else:
             self.ready[env_ids] = False
+            self.target[env_ids] = 0.0
 
     @classmethod
     def phase_name(cls, elapsed_step):
@@ -102,6 +105,8 @@ class CartesianImpedanceGrasp:
                 candidate = self._smooth_target(self.pinch, self.lifted, elapsed - cursor, steps) if label == "lift" else self.lifted
             target = torch.where(active[:, None], candidate, target)
             cursor += steps
+
+        self.target[:] = torch.where(self.ready[:, None], target, 0.0)
 
         hand_pose = self.robot.body_link_pose_w.torch[:, self.hand_id]
         pos_error, rot_error = compute_pose_error(

@@ -10,6 +10,8 @@ from isaaclab.app import add_launcher_args, launch_simulation
 from isaaclab.sim import SimulationCfg
 from isaaclab_newton.physics import NewtonCfg
 
+from franka_impedance.cfg.physics import PHYSICS_SUBSTEPS
+
 
 def run(env, output):
     import torch
@@ -102,7 +104,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     add_launcher_args(parser)
     args = parser.parse_args()
-    sim = SimulationCfg(dt=1 / 120, device=args.device, physics=NewtonCfg())
+    sim = SimulationCfg(dt=1 / 120, device=args.device, physics=NewtonCfg(num_substeps=PHYSICS_SUBSTEPS))
     with launch_simulation(sim, args) as physics:
         if not isinstance(physics, NewtonCfg):
             raise RuntimeError("The gripper diagnostic requires Newton.")

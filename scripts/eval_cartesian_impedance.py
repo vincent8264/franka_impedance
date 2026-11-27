@@ -8,6 +8,8 @@ from isaaclab.app import add_launcher_args, launch_simulation
 from isaaclab.sim import SimulationCfg
 from isaaclab_newton.physics import NewtonCfg
 
+from franka_impedance.cfg.physics import PHYSICS_SUBSTEPS
+
 
 def evaluate(env, args):
     import torch
@@ -77,6 +79,7 @@ def evaluate(env, args):
         "seed": args.seed,
         "mass_range_kg": args.mass_range,
         "friction_range": args.friction_range,
+        "physics_substeps": env.cfg.sim.physics.num_substeps,
         "episode_properties": sorted(property_record.samples, key=lambda sample: (sample["environment"], sample["episode"])),
         "environments": env.num_envs,
         "episodes": total,
@@ -121,7 +124,7 @@ def main():
         parser.error("--diagnostics requires one environment and one episode.")
     if args.gif and args.gif.suffix.lower() != ".gif":
         parser.error("--gif requires a .gif path.")
-    sim = SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg())
+    sim = SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg(num_substeps=PHYSICS_SUBSTEPS))
     with launch_simulation(sim, args) as physics:
         if not isinstance(physics, NewtonCfg):
             raise RuntimeError("Cartesian impedance evaluation requires Newton.")

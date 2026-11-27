@@ -101,6 +101,8 @@ default mass and friction readback from Newton after a partial reset.
 
 The fixed baseline uses the same Newton scene, task state, contact reward,
 effort limits, 120 Hz control rate, and success checks as Direct RL. The scene
+now uses eight physics substeps per control step. Earlier results linked below
+used one substep and need fresh evaluation for a matched comparison. The scene
 still produces the 46-element policy observation; the classical controller
 also uses the robot's model Jacobian to turn a Cartesian wrench into torques.
 It settles the cube for 36 steps, then approaches, descends, closes, lifts, and
@@ -121,10 +123,24 @@ uv run --locked python "{project root}\scripts\eval_cartesian_impedance.py" --ep
 For one episode of step-level diagnostics, use `--episodes 1 --num-envs 1
 --diagnostics "{project root}\logs\impedance\nominal.csv"`. The evaluation
 prints the same success, return, and action-saturation metrics as the Direct RL
-evaluator. One nominal seed-42 simulator episode passed both geometric and
-contact-verified success checks; see the [development record](docs/direct_rl_development.md).
-That single result does not establish robustness across object properties, and
-the gripper joint-limit tolerance remains under investigation.
+evaluator. In a 16-episode seed-42 run, the fixed controller succeeded in all
+16 episodes under the default property ranges. A heavier, lower-friction range
+of 0.5-1.3 kg and 0.08-0.25 friction reduced contact-verified success to
+13/16. The [baseline results](results/README.md) include the metrics and
+sampled properties for these and two other distributions. The gripper
+joint-limit tolerance remains under investigation.
+
+## Impedance with residual RL
+
+The residual policy observes the shared robot/cube state plus the fixed
+controller's target error, current action, and episode progress. It learns
+small arm and finger effort corrections while the shared environment keeps
+the same grasp reward, object-property sampling, and success checks. Training
+and evaluation entry points are `scripts/train_residual_rl.py` and
+`scripts/eval_residual_rl.py`. The [residual RL guide](docs/residual_rl.md)
+describes the action scales, commands, and integration checks. The default
+property range is the 0.5-1.3 kg, 0.08-0.25 friction challenge case where the
+fixed controller achieved 13/16 contact-verified successes.
 
 ## Entry points
 
@@ -132,6 +148,7 @@ the gripper joint-limit tolerance remains under investigation.
 - [train_direct_rl.py](scripts/train_direct_rl.py): Direct RL rollout, contact probes, and PPO smoke test.
 - [eval_direct_rl.py](scripts/eval_direct_rl.py): evaluate a saved Direct RL policy.
 - [eval_cartesian_impedance.py](scripts/eval_cartesian_impedance.py): Baseline evaluation and diagnostics.
+- [train_residual_rl.py](scripts/train_residual_rl.py) and [eval_residual_rl.py](scripts/eval_residual_rl.py): residual PPO training and evaluation.
 - [validate_grasp_physics.py](scripts/validate_grasp_physics.py): scripted nominal grasp validation with measured applied effort.
 - [diagnose_grasp_handoff.py](scripts/diagnose_grasp_handoff.py) and [diagnose_gripper_limits.py](scripts/diagnose_gripper_limits.py): specialized diagnostics.
 

@@ -8,6 +8,7 @@ from isaaclab.utils import configclass
 from isaaclab_newton.physics import NewtonCfg
 from isaaclab_newton.sensors.contact_sensor import ContactSensorCfg
 
+from franka_impedance.cfg.physics import PHYSICS_SUBSTEPS
 from franka_impedance.controllers.effort_control import EFFORT_JOINT_NAMES, FrankaEffortControl
 from franka_impedance.envs.grasp_rewards import grasp_reward
 from franka_impedance.cfg.grasp_scene_cfg import GraspSceneCfg
@@ -36,7 +37,7 @@ class ContactGraspSceneCfg(GraspSceneCfg):
 @configclass
 class DirectGraspCfg(DirectRLEnvCfg):
     scene = GraspSceneCfg(num_envs=4, env_spacing=2.0)
-    sim = SimulationCfg(dt=1.0 / 120.0, physics=NewtonCfg())
+    sim = SimulationCfg(dt=1.0 / 120.0, physics=NewtonCfg(num_substeps=PHYSICS_SUBSTEPS))
     decimation = 1
     episode_length_s = 12.0
     action_space = len(EFFORT_JOINT_NAMES)

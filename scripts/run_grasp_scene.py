@@ -10,6 +10,8 @@ import argparse
 from isaaclab.app import add_launcher_args, launch_simulation
 from isaaclab_newton.physics import NewtonCfg
 
+from franka_impedance.cfg.physics import PHYSICS_SUBSTEPS
+
 import isaaclab.sim as sim_utils
 import torch
 
@@ -90,7 +92,7 @@ def run(sim_cfg: sim_utils.SimulationCfg, args: argparse.Namespace) -> None:
 
 def main() -> None:
     args = parse_args()
-    sim_cfg = sim_utils.SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg())
+    sim_cfg = sim_utils.SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg(num_substeps=PHYSICS_SUBSTEPS))
     with launch_simulation(sim_cfg, args) as physics_cfg:
         if physics_cfg is None:
             raise RuntimeError("No physics backend was selected.")

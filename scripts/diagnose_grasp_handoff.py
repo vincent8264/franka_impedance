@@ -7,6 +7,8 @@ from isaaclab.app import add_launcher_args, launch_simulation
 from isaaclab.sim import SimulationCfg
 from isaaclab_newton.physics import NewtonCfg
 
+from franka_impedance.cfg.physics import PHYSICS_SUBSTEPS
+
 
 def run(env, args):
     import torch
@@ -83,7 +85,7 @@ def main():
     args = parser.parse_args()
     if not args.checkpoint.is_file():
         parser.error(f"Checkpoint does not exist: {args.checkpoint}")
-    sim = SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg())
+    sim = SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg(num_substeps=PHYSICS_SUBSTEPS))
     with launch_simulation(sim, args) as physics:
         if not isinstance(physics, NewtonCfg):
             raise RuntimeError("The handoff diagnostic requires Newton.")

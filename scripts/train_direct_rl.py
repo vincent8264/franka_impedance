@@ -10,6 +10,8 @@ from isaaclab.app import add_launcher_args, launch_simulation
 from isaaclab.sim import SimulationCfg
 from isaaclab_newton.physics import NewtonCfg
 
+from franka_impedance.cfg.physics import PHYSICS_SUBSTEPS
+
 
 def train(env, args):
     import torch
@@ -21,6 +23,7 @@ def train(env, args):
     (log_dir / "run_config.json").write_text(json.dumps({
         "seed": args.seed, "num_envs": args.num_envs, "iterations": args.iterations,
         "mass_range_kg": args.mass_range, "friction_range": args.friction_range,
+        "physics_substeps": env.cfg.sim.physics.num_substeps,
         "contact_reward": args.contact_reward,
     }, indent=2) + "\n", encoding="utf-8")
     print(f"PPO output: {log_dir}")
@@ -83,7 +86,7 @@ def main():
     if args.mode == "properties" and mass_range == (NOMINAL_MASS_KG,) * 2 and friction_range == (NOMINAL_FRICTION,) * 2:
         parser.error("Properties mode requires a nonnominal mass or friction range.")
 
-    sim = SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg())
+    sim = SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg(num_substeps=PHYSICS_SUBSTEPS))
     with launch_simulation(sim, args) as physics:
         if not isinstance(physics, NewtonCfg):
             raise RuntimeError("Direct grasp requires Newton.")

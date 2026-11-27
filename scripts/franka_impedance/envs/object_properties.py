@@ -11,13 +11,14 @@ DEFAULT_MASS_RANGE_KG = (0.1, 0.5)
 DEFAULT_FRICTION_RANGE = (0.2, 0.8)
 
 
-def add_property_args(parser) -> None:
+def add_property_args(parser, mass_default=DEFAULT_MASS_RANGE_KG,
+                      friction_default=DEFAULT_FRICTION_RANGE) -> None:
     parser.add_argument("--mass-range", type=float, nargs=2, metavar=("MIN_KG", "MAX_KG"),
-                        default=DEFAULT_MASS_RANGE_KG,
-                        help="Uniform cube mass range in kg; default 0.1 0.5")
+                        default=mass_default,
+                        help=f"Uniform cube mass range in kg; default {mass_default[0]} {mass_default[1]}")
     parser.add_argument("--friction-range", type=float, nargs=2, metavar=("MIN_MU", "MAX_MU"),
-                        default=DEFAULT_FRICTION_RANGE,
-                        help="Uniform Newton friction coefficient range; default 0.2 0.8")
+                        default=friction_default,
+                        help=f"Uniform Newton friction coefficient range; default {friction_default[0]} {friction_default[1]}")
 
 
 def parse_property_ranges(parser, args) -> tuple[tuple[float, float], tuple[float, float]]:

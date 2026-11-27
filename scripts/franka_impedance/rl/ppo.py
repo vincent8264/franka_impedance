@@ -3,7 +3,8 @@
 from importlib.metadata import version
 
 
-def make_runner(env, seed, iterations=1, save_interval=1, log_dir=None, step_trace=None):
+def make_runner(env, seed, iterations=1, save_interval=1, log_dir=None, step_trace=None,
+                *, experiment_name="direct_grasp", num_steps_per_env=24, gamma=0.99, init_std=0.3):
     import torch
 
     from isaaclab_rl.rsl_rl import (
@@ -27,16 +28,16 @@ def make_runner(env, seed, iterations=1, save_interval=1, log_dir=None, step_tra
     cfg = RslRlOnPolicyRunnerCfg(
         device=env.device,
         seed=seed,
-        num_steps_per_env=24,
+        num_steps_per_env=num_steps_per_env,
         max_iterations=iterations,
         save_interval=save_interval,
-        experiment_name="direct_grasp",
+        experiment_name=experiment_name,
         obs_groups={"actor": ["policy"], "critic": ["policy"]},
         actor=RslRlMLPModelCfg(
             hidden_dims=[64, 64],
             activation="elu",
             obs_normalization=True,
-            distribution_cfg=RslRlMLPModelCfg.GaussianDistributionCfg(init_std=0.3),
+            distribution_cfg=RslRlMLPModelCfg.GaussianDistributionCfg(init_std=init_std),
         ),
         critic=RslRlMLPModelCfg(hidden_dims=[64, 64], activation="elu", obs_normalization=True),
         algorithm=RslRlPpoAlgorithmCfg(
@@ -48,7 +49,7 @@ def make_runner(env, seed, iterations=1, save_interval=1, log_dir=None, step_tra
             num_mini_batches=2,
             learning_rate=3e-4,
             schedule="fixed",
-            gamma=0.99,
+            gamma=gamma,
             lam=0.95,
             desired_kl=0.01,
             max_grad_norm=1.0,

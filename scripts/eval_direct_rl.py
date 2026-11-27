@@ -9,6 +9,8 @@ from isaaclab.app import add_launcher_args, launch_simulation
 from isaaclab.sim import SimulationCfg
 from isaaclab_newton.physics import NewtonCfg
 
+from franka_impedance.cfg.physics import PHYSICS_SUBSTEPS
+
 
 def evaluate(env, args):
     import torch
@@ -18,7 +20,8 @@ def evaluate(env, args):
     from franka_impedance.envs.object_properties import EpisodePropertyRecord
 
     actor = load_actor(env, args.checkpoint, args.seed) if args.checkpoint else None
-    obs, _ = env.reset()
+    # The RSL-RL wrapper created by load_actor has already reset the scene.
+    obs = env.obs_buf if actor is not None else env.reset()[0]
     property_record = EpisodePropertyRecord(env)
     if args.gif:
         from franka_impedance.diagnostics.grasp_gif import GraspGif
@@ -72,6 +75,7 @@ def evaluate(env, args):
         "seed": args.seed,
         "mass_range_kg": args.mass_range,
         "friction_range": args.friction_range,
+        "physics_substeps": env.cfg.sim.physics.num_substeps,
         "episode_properties": sorted(property_record.samples, key=lambda sample: (sample["environment"], sample["episode"])),
         "environments": env.num_envs,
         "episodes": total,
@@ -125,7 +129,7 @@ def main():
         args.num_envs != 1 or args.episodes != 1 or len(checkpoints) != 1 or checkpoints[0] is None
     ):
         parser.error("--diagnostics requires one environment, one episode, and one checkpoint.")
-    sim = SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg())
+    sim = SimulationCfg(dt=1.0 / 120.0, device=args.device, physics=NewtonCfg(num_substeps=PHYSICS_SUBSTEPS))
     with launch_simulation(sim, args) as physics:
         if not isinstance(physics, NewtonCfg):
             raise RuntimeError("Direct grasp requires Newton.")

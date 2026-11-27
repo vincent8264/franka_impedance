@@ -94,6 +94,7 @@ class CartesianImpedanceTests(unittest.TestCase):
         self.assertEqual(action[0, 7].item(), -1.0)
         self.assertEqual(action[1, 7].item(), 1.0)
         controller.reset(torch.tensor([True, False]))
+        self.assertTrue(torch.equal(controller.target[0], torch.zeros(3)))
         env.episodes.elapsed_steps[:] = torch.tensor([0, 486])
         action = controller.act()
         self.assertTrue(torch.equal(action[0], torch.zeros(8)))
