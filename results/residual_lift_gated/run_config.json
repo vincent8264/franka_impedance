@@ -1,0 +1,20 @@
+{
+  "seed": 42,
+  "num_envs": 64,
+  "iterations": 300,
+  "mass_range_kg": [
+    0.7,
+    1.5
+  ],
+  "friction_range": [
+    0.06,
+    0.22
+  ],
+  "physics_substeps": 8,
+  "residual_arm_scale": 0.015,
+  "residual_finger_effort_n": 52.5,
+  "residual_cost": 0.002,
+  "num_steps_per_env": 128,
+  "gamma": 0.9995,
+  "init_std": 0.3
+}

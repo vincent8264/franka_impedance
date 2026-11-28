@@ -1,0 +1,230 @@
+{
+  "controller": "cartesian_impedance_residual",
+  "checkpoint": "D:\\DY\\UCSD\\27FA\\ECE 276C\\Project\\franka_impedance\\logs\\residual_grasp\\20261127-205833-468987\\final.pt",
+  "seed": 123,
+  "mass_range_kg": [
+    0.8,
+    1.6
+  ],
+  "friction_range": [
+    0.05,
+    0.18
+  ],
+  "physics_substeps": 8,
+  "residual_arm_scale": 0.015,
+  "residual_finger_effort_n": 52.5,
+  "residual_cost": 0.002,
+  "episode_properties": [
+    {
+      "environment": 0,
+      "episode": 0,
+      "mass_kg": 0.9546050429344177,
+      "friction": 0.09683509171009064
+    },
+    {
+      "environment": 0,
+      "episode": 1,
+      "mass_kg": 1.3080965280532837,
+      "friction": 0.1685808002948761
+    },
+    {
+      "environment": 0,
+      "episode": 2,
+      "mass_kg": 1.4438422918319702,
+      "friction": 0.12273171544075012
+    },
+    {
+      "environment": 0,
+      "episode": 3,
+      "mass_kg": 0.9373494386672974,
+      "friction": 0.05385332554578781
+    },
+    {
+      "environment": 0,
+      "episode": 4,
+      "mass_kg": 1.0150829553604126,
+      "friction": 0.09657862782478333
+    },
+    {
+      "environment": 0,
+      "episode": 5,
+      "mass_kg": 0.8231551647186279,
+      "friction": 0.1547503024339676
+    },
+    {
+      "environment": 0,
+      "episode": 6,
+      "mass_kg": 1.3894771337509155,
+      "friction": 0.06178409978747368
+    },
+    {
+      "environment": 0,
+      "episode": 7,
+      "mass_kg": 1.598217487335205,
+      "friction": 0.07837719470262527
+    },
+    {
+      "environment": 1,
+      "episode": 0,
+      "mass_kg": 1.2026127576828003,
+      "friction": 0.08577501028776169
+    },
+    {
+      "environment": 1,
+      "episode": 1,
+      "mass_kg": 1.578567385673523,
+      "friction": 0.06736180931329727
+    },
+    {
+      "environment": 1,
+      "episode": 2,
+      "mass_kg": 1.5852112770080566,
+      "friction": 0.09788255393505096
+    },
+    {
+      "environment": 1,
+      "episode": 3,
+      "mass_kg": 0.8217130303382874,
+      "friction": 0.12185932695865631
+    },
+    {
+      "environment": 1,
+      "episode": 4,
+      "mass_kg": 1.5851095914840698,
+      "friction": 0.08489958196878433
+    },
+    {
+      "environment": 1,
+      "episode": 5,
+      "mass_kg": 0.9354346990585327,
+      "friction": 0.17155468463897705
+    },
+    {
+      "environment": 1,
+      "episode": 6,
+      "mass_kg": 1.3657832145690918,
+      "friction": 0.16178368031978607
+    },
+    {
+      "environment": 1,
+      "episode": 7,
+      "mass_kg": 0.9779075384140015,
+      "friction": 0.06401366740465164
+    },
+    {
+      "environment": 2,
+      "episode": 0,
+      "mass_kg": 1.146874189376831,
+      "friction": 0.10269050300121307
+    },
+    {
+      "environment": 2,
+      "episode": 1,
+      "mass_kg": 1.4785221815109253,
+      "friction": 0.0854261964559555
+    },
+    {
+      "environment": 2,
+      "episode": 2,
+      "mass_kg": 1.3333568572998047,
+      "friction": 0.08102565258741379
+    },
+    {
+      "environment": 2,
+      "episode": 3,
+      "mass_kg": 1.4648067951202393,
+      "friction": 0.14737524092197418
+    },
+    {
+      "environment": 2,
+      "episode": 4,
+      "mass_kg": 0.9783008098602295,
+      "friction": 0.1781652867794037
+    },
+    {
+      "environment": 2,
+      "episode": 5,
+      "mass_kg": 0.8369661569595337,
+      "friction": 0.06003371626138687
+    },
+    {
+      "environment": 2,
+      "episode": 6,
+      "mass_kg": 0.9468250870704651,
+      "friction": 0.12366367876529694
+    },
+    {
+      "environment": 2,
+      "episode": 7,
+      "mass_kg": 0.8886175751686096,
+      "friction": 0.1585729867219925
+    },
+    {
+      "environment": 3,
+      "episode": 0,
+      "mass_kg": 1.0902293920516968,
+      "friction": 0.1425754874944687
+    },
+    {
+      "environment": 3,
+      "episode": 1,
+      "mass_kg": 1.4699461460113525,
+      "friction": 0.15846484899520874
+    },
+    {
+      "environment": 3,
+      "episode": 2,
+      "mass_kg": 0.8144104480743408,
+      "friction": 0.11645221710205078
+    },
+    {
+      "environment": 3,
+      "episode": 3,
+      "mass_kg": 1.3607274293899536,
+      "friction": 0.14545273780822754
+    },
+    {
+      "environment": 3,
+      "episode": 4,
+      "mass_kg": 1.485453486442566,
+      "friction": 0.05773738771677017
+    },
+    {
+      "environment": 3,
+      "episode": 5,
+      "mass_kg": 1.399840235710144,
+      "friction": 0.08551164716482162
+    },
+    {
+      "environment": 3,
+      "episode": 6,
+      "mass_kg": 1.5620757341384888,
+      "friction": 0.14692826569080353
+    },
+    {
+      "environment": 3,
+      "episode": 7,
+      "mass_kg": 1.5852571725845337,
+      "friction": 0.14845767617225647
+    }
+  ],
+  "environments": 4,
+  "episodes": 32,
+  "geometric_success_rate": 1.0,
+  "contact_verified_success_rate": 1.0,
+  "mean_episode_return": 0.6213942766189575,
+  "mean_learning_return": 0.6197106242179871,
+  "mean_episode_steps": 684.0,
+  "residual_action_saturation_fraction_by_channel": [
+    0.0,
+    0.0,
+    0.5578399300575256,
+    0.0,
+    0.5183662176132202,
+    0.5455957651138306,
+    0.3585069477558136,
+    0.01608187146484852
+  ],
+  "arm_residual_saturation_fraction": 0.28290125727653503,
+  "finger_residual_saturation_fraction": 0.01608187146484852
+}
